@@ -83,27 +83,33 @@ different costs to members (the listed costs are per half-hour 'slot'), and
 the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
-SELECT Facilities.name 'Facility Name', CONCAT(Members.firstname, ' ', Members.surname) 'Full Name', 
-CASE 
-WHEN (Members.memid <> 0 AND Facilities.membercost * Bookings.slots > 30) THEN Facilities.membercost * Bookings.slots 
-WHEN (Members.memid = 0 AND Facilities.guestcost * Bookings.slots > 30) THEN Facilities.guestcost * Bookings.slots 
-END AS 'Cost'
+SELECT 
+Facilities.name 'Facility Name', 
+Members.memid memid, 
+CONCAT(Members.firstname, ' ', Members.surname) 'Full Name', 
+Facilities.membercost * Bookings.slots cost
 
-FROM Facilities 
-JOIN Bookings 
-ON Facilities.facid = Bookings.facid 
-JOIN Members 
-ON Bookings.memid = Members.memid 
+FROM Facilities JOIN Bookings ON Facilities.facid = Bookings.facid JOIN Members ON Bookings.memid = Members.memid 
 
 WHERE 
 Bookings.starttime LIKE "2012-09-14%"
-AND
-    (
-        (Members.memid <> 0 AND Facilities.membercost * Bookings.slots > 30)
-        OR
-        (Members.memid = 0 AND Facilities.guestcost * Bookings.slots > 30)
-    )
-ORDER BY 3 DESC;
+AND Facilities.membercost * Bookings.slots > 30
+AND Members.memid <> 0
+
+UNION ALL
+
+SELECT 
+Facilities.name 'Facility Name', 
+Members.memid memid, 
+CONCAT(Members.firstname, ' ', Members.surname) 'Full Name', 
+Facilities.guestcost * Bookings.slots cost
+
+FROM Facilities JOIN Bookings ON Facilities.facid = Bookings.facid JOIN Members ON Bookings.memid = Members.memid 
+
+WHERE 
+Bookings.starttime LIKE "2012-09-14%"
+AND Facilities.guestcost * Bookings.slots > 30
+AND Members.memid = 0;
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */ 
 SELECT * FROM
